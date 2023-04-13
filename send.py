@@ -18,27 +18,39 @@ def read_serial(s):
             for cmd in command_queue:
                 ser.write(cmd)
 
+
+def clamp(val, low, high):
+    if val > high:
+        return high
+    if val < low:
+        return low
+    return val
+
+
 def speedToByteStr(speed_val):
-    if speed_val > 500:
-        speed_val = 500
-    elif speed_val < -500:
-        speed_val = -500
+    return int16ToByteStr(clamp(speed_val, -500, 500))
+def radiusToByteStr(radius_val):
+    return int16ToByteStr(clamp(radius_val, -2000, 2000))
+
+
+def int16ToByteStr(val):
     
     first_byte = 0
     second_byte = 0
 
-    if speed_val < 0:
-        speed_val = 2**16 + speed_val # velocity is over 2 bytes
+    if val < 0:
+        val = 2**16 + val
     #    first_byte = 255 # FF
     #    second_byte = speed_val - (255 << 8)
     #else: 
-    first_byte = speed_val >> 8
-    second_byte = speed_val - (first_byte << 8)
+    first_byte = val >> 8
+    second_byte = val - (first_byte << 8)
     
     return str(first_byte) + " " + str(second_byte)
         
 
 speed = 100
+radius = 500
 
 while True:
     line = raw_input("Enter serial command or 'quit': ")
@@ -52,6 +64,11 @@ while True:
         speed = int(parts[1])
         print("Set speed to " + str(speed) + " millimeters/s") 
         continue
+    if parts[0] == "radius":
+        radius = int(parts[1])
+        print("Set radius to " + str(speed) + " millimeters") 
+        continue
+
     if line == "stop":
         cmd = "137 0 0 0 0"
     if line == "forward":
@@ -62,6 +79,15 @@ while True:
         cmd = "137 " + speedToByteStr(speed) + " 255 255" # 0xFFFF in last 2 mean turn in place clockwise
     if line == "left":
         cmd = "137 " + speedToByteStr(speed) + " 0 1" # 0x0001 means turn in place counterclockwise
+    if line == "fr":
+        cmd = "137 " + speedToByteStr(speed) + " " + radiusToByteStr(-radius)
+    if line == "fl":
+        cmd = "137 " + speedToByteStr(speed) + " " + radiusToByteStr(radius)
+    if line == "br":
+        cmd = "137 " + speedToByteStr(-speed) + " " + radiusToByteStr(-radius)
+    if line == "bl":
+        cmd = "137 " + speedToByteStr(-speed) + " " + radiusToByteStr(radius)
+    
     parts = cmd.split(" ")
     print("  Parsing " + cmd)
     try:
