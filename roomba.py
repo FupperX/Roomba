@@ -201,8 +201,8 @@ while True:
         break
 
     next_stage = stages[stage + 1]
-    if next_stage.time <= t:
-        next_stage.action()
+    if next_stage['time'] <= t:
+        next_stage['action']()
         stage += 1
 
     for command in command_queue:
