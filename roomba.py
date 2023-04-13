@@ -42,8 +42,9 @@ def int16ToBytes(val):
     return first_byte, second_byte
 
 
-def start():
+def start_mode():
     # Opcode 128: Start
+    print("Start")
     command_queue.append([128])
 
 def passive_mode():
@@ -62,7 +63,7 @@ def passive_mode():
     # While in Passive mode, you can read Create’s sensors,
     # watch Create perform any one of its ten built-in demos,
     # and charge the battery.
-
+    print("Passive")
     command_queue.append([128])
 
 def safe_mode():
@@ -86,6 +87,7 @@ def safe_mode():
     # waits with all motors and LEDs off and does not respond to
     # Play or Advance button presses or other sensor input.
     # Note that charging terminates when you enter Safe Mode.
+    print("Safe")
     command_queue.append([131])
 
 def full_mode():
@@ -112,6 +114,7 @@ def full_mode():
 
 
 def drive(speed = 100, turn_radius = None):
+    print("Drive " + str(speed) + ("" if turn_radius is None else (" " + str(turn_radius))))
     # Opcode 137: Drive
     velocity_high_byte, velocity_low_byte = speedToBytes(speed)
     if turn_radius is None:
@@ -123,7 +126,13 @@ def drive(speed = 100, turn_radius = None):
         command_queue.append([137, velocity_high_byte, velocity_low_byte, radius_high_byte, radius_low_byte])
 
 
+def stop_bot():
+    print("Stop")
+    command_queue.append([137, 0, 0, 0, 0])
+
+
 def turn(speed = 100):
+    print("Turn " + str(speed))
     # Opcode 137: Drive
     # Turn in place clockwise = 0xFFFF
     # Turn in place counter-clockwise = 0x0001
@@ -135,26 +144,35 @@ def turn(speed = 100):
 
 
 def register_beeps():
+    print("Register beeps")
     # Opcode 140: Song
     command_queue.append([140, 0, 4, 60, 12, 64, 12, 67, 12, 72, 36])
-    command_queue.append([140, 1, 2, 84, 12, 84, 36])
-    command_queue.append([140, 2, 5, 60, 12, 64, 12, 67, 12, 72, 6, 72, 36])
+    #command_queue.append([140, 1, 2, 72, 12, 72, 36])
+    command_queue.append([140, 1, 2, 55, 12, 55, 36])
+    command_queue.append([140, 2, 2, 60, 12, 60, 36])
+    command_queue.append([140, 3, 2, 64, 12, 64, 36])
+    command_queue.append([140, 4, 2, 67, 12, 67, 36])
+    command_queue.append([140, 5, 2, 72, 12, 72, 36])
+    command_queue.append([140, 6, 5, 60, 12, 64, 12, 67, 12, 72, 12, 72, 36])
     #command_queue.append([140 0 4 62 12 66 12 69 12 74 36])
 
-def beep1():
+def beep(num):
+    print("Beep " + str(num))
     # Opcode 141: Play Song
     # Need to register with Opcode 140 first!
-    command_queue.append([140, 0])
+    command_queue.append([141, num])
 def beep2():
-    command_queue.append([140, 1])
+    print("Beep 2")
+    command_queue.append([141, 1])
 def beep3():
-    command_queue.append([140, 2])
+    print("Beep 3")
+    command_queue.append([141, 2])
 
 
 
 
 stage = -1
-spd = 200
+spd = 300
 
 tc = 0
 
@@ -163,21 +181,18 @@ stages = []
 def plan(action, duration):
     global tc
     global stages
-    stages.append({time: tc, action: action})
+    stages.append({'time': tc, 'action': action})
     tc += duration
 
 
 #####
-plan(lambda: start() or safe_mode() or beep1(), 1)
-
+plan((lambda: start_mode() or safe_mode() or register_beeps() or beep(0)), 2)
 d = 2
 dm = 3
-dt = 1
-tr = 100
-plan(lambda: beep2() or drive(speed = spd, turn_radius = None), d)
+dt = 1.0/(3.0/2.0)
+tr = 300
+plan(lambda: beep(1) or drive(speed = spd, turn_radius = None), d)
 plan(lambda: drive(speed = -spd, turn_radius = None), d)
-plan(lambda: turn(speed = spd), d)
-plan(lambda: turn(speed = -spd), d)
 plan(lambda: turn(speed = spd), d)
 plan(lambda: turn(speed = -spd), d)
 plan(lambda: drive(speed = spd, turn_radius = tr), d)
@@ -185,11 +200,17 @@ plan(lambda: drive(speed = -spd, turn_radius = tr), d)
 plan(lambda: drive(speed = spd, turn_radius = -tr), d)
 plan(lambda: drive(speed = -spd, turn_radius = -tr), d)
 
-for i in range(4):    
-    plan(lambda: beep2() or drive(speed = spd, turn_radius = None), dm)
+for i in range(4):
+    if i == 0:
+        plan(lambda: beep(1), 0.1)
+        
+    plan(lambda: drive(speed = spd, turn_radius = None), dm)
+    plan(lambda j=i: beep(2+j), 0.1)
     plan(lambda: turn(speed = spd), dt)
 
-plan(lambda: beep3() or passive_mode(), 1)
+plan(lambda: beep(6), 3)
+plan(lambda: stop_bot(), 3)
+plan(lambda: passive_mode(), 1)
 ####
 
 
@@ -197,7 +218,7 @@ start = time.time()
 while True:
     t = time.time() - start
 
-    if stage >= len(stages):
+    if stage >= len(stages)-1:
         break
 
     next_stage = stages[stage + 1]
@@ -207,6 +228,7 @@ while True:
 
     for command in command_queue:
         ser.write(bytearray(command))
+    del command_queue[:]
 
     time.sleep(0.010)
 ser.close()
