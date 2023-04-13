@@ -54,30 +54,30 @@ radius = 500
 
 while True:
     line = raw_input("Enter serial command or 'quit': ")
-    if line == 'q' or line == 'quit':
+    if line == 'q' or line == 'quit' or line == 'exit':
         break
     parts = line.split(" ")
     cmd = line
     if line == "init":
         cmd = "128 131"
-    if parts[0] == "speed":
+    if parts[0] == "speed" or parts[0] == "sp":
         speed = int(parts[1])
         print("Set speed to " + str(speed) + " millimeters/s") 
         continue
-    if parts[0] == "radius":
+    if parts[0] == "radius" or parts[0] == "r":
         radius = int(parts[1])
-        print("Set radius to " + str(speed) + " millimeters") 
+        print("Set radius to " + str(radius) + " millimeters") 
         continue
 
-    if line == "stop":
+    if line == "stop" or line == "s":
         cmd = "137 0 0 0 0"
-    if line == "forward":
+    if line == "forward" or line == "f":
         cmd = "137 " + speedToByteStr(speed) + " 128 0" # 128 means straight
-    if line == "back":
+    if line == "back" or line == "b":
         cmd = "137 " + speedToByteStr(-speed) + " 128 0"
-    if line == "right":
+    if line == "right" or line == "r":
         cmd = "137 " + speedToByteStr(speed) + " 255 255" # 0xFFFF in last 2 mean turn in place clockwise
-    if line == "left":
+    if line == "left" or line == "l":
         cmd = "137 " + speedToByteStr(speed) + " 0 1" # 0x0001 means turn in place counterclockwise
     if line == "fr":
         cmd = "137 " + speedToByteStr(speed) + " " + radiusToByteStr(-radius)
