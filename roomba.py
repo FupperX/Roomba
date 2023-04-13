@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import serial
 from threading import Thread
 import time
@@ -134,19 +136,19 @@ def turn(speed = 100):
 
 def register_beeps():
     # Opcode 140: Song
-    command_queue.append([140 0 4 60 12 64 12 67 12 72 36])
-    command_queue.append([140 1 2 84 12 84 36])
-    command_queue.append([140 2 5 60 12 64 12 67 12 72 6 72 36])
+    command_queue.append([140, 0, 4, 60, 12, 64, 12, 67, 12, 72, 36])
+    command_queue.append([140, 1, 2, 84, 12, 84, 36])
+    command_queue.append([140, 2, 5, 60, 12, 64, 12, 67, 12, 72, 6, 72, 36])
     #command_queue.append([140 0 4 62 12 66 12 69 12 74 36])
 
 def beep1():
     # Opcode 141: Play Song
     # Need to register with Opcode 140 first!
-    command_queue.append([140 0])
+    command_queue.append([140, 0])
 def beep2():
-    command_queue.append([140 1])
+    command_queue.append([140, 1])
 def beep3():
-    command_queue.append([140 2])
+    command_queue.append([140, 2])
 
 
 
